@@ -1,0 +1,13 @@
+use demo;
+drop table order_line;
+drop table order_header;
+drop table customer;
+drop table states_provs;
+drop table countries;
+drop table shipping_types;
+drop table product_costs;
+drop table products_prices;
+drop table products;
+drop table product_subfamily;
+drop table product_family;
+drop table price_lists;
