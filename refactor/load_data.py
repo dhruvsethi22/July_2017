@@ -2,6 +2,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql.expression import func
 from faker import Faker
 import datetime
+import random
 
 import mysql_connection as mysql
 import tables
@@ -9,6 +10,8 @@ import tables
 
 engine = mysql.engine
 Session = sessionmaker(bind=mysql.engine)
+
+fake_data = Faker()
 
 
 def countries():
@@ -56,28 +59,19 @@ def states_provs():
 states_provs()
 
 
-def customers():
+def customers(number_of_customers):
     session = Session()
-    data = tables.Customer(customer_
+    for i in range(0, number_of_customers):
+        country = session.query(tables.Country).order_by(func.rand()).first()
+        state_prov = session.query(
+            tables.State_Prov).order_by(func.rand()).first()
+        data = tables.Customer(customer_name=fake_data.name(), address=fake_data.street_address(), city=fake_data.city(),
+                               state_prov_id=state_prov.state_prov_id, country=country, ship_to=random.randint(0, 1), sold_to=random.randint(0, 1),
+                               postal_code=fake_data.postalcode(), created_date=datetime.datetime.utcnow(),
+                               last_updated_date=datetime.datetime.utcnow())
+        session.add(data)
+        session.commit()
+    session.close()
+    print('Customers table has been populated.')
 
-# def customers(number):
-#     fake_data = Faker()
-#     s = session()
-#     c = Countries(country_name="USA", created_date=datetime.datetime.utcnow(),
-#                   last_updated_date=datetime.datetime.utcnow())
-#     s.add(c)
-#     for i in range(0, number):
-#         sp = States_Provs(state_name=fake_data.state(), country=c, created_date=datetime.datetime.utcnow(),
-#                           last_updated_date=datetime.datetime.utcnow())
-#         s.add(sp)
-#         for i in range(0, 12):
-#             cus = Customer(customer_id=random.randint(1001, 999999), customer_name=fake_data.name(), address=fake_data.street_address(), city=fake_data.city(),
-#                            state_prov_id=random.randint(1, 10), country=c, ship_to=random.randint(0, 1), sold_to=random.randint(0, 1),
-#                            postal_code=fake_data.postalcode(), created_date=datetime.datetime.utcnow(),
-#                            last_updated_date=datetime.datetime.utcnow())
-#             s.add(cus)
-#     s.commit()
-#     s.close()
-
-
-# populate_cus(50)
+customers(100)
