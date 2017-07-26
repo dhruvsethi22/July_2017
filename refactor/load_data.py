@@ -6,6 +6,7 @@ import random
 
 import mysql_connection as mysql
 import tables
+import parts
 
 
 engine = mysql.engine
@@ -26,9 +27,6 @@ def countries():
         session.commit()
     session.close()
     print('Countries table has been populated.')
-
-
-countries()
 
 
 def states_provs():
@@ -56,12 +54,10 @@ def states_provs():
     session.close()
     print('States and Provs table has been populated.')
 
-states_provs()
 
-
-def customers(number_of_customers):
+def customers(number):
     session = Session()
-    for i in range(0, number_of_customers):
+    for i in range(0, number):
         country = session.query(tables.Country).order_by(func.rand()).first()
         state_prov = session.query(
             tables.State_Prov).order_by(func.rand()).first()
@@ -74,4 +70,31 @@ def customers(number_of_customers):
     session.close()
     print('Customers table has been populated.')
 
+
+def families():
+    s = Session()
+    for k, v in parts.families.items():
+        data = tables.Product_Family(family_id=k,
+                                     product_family_name=v)
+        s.add(data)
+        s.commit()
+    s.close()
+    print('Product Family table has been populated.')
+
+
+def subfamilies():
+    s = Session()
+    for i in parts.subfamilies:
+        data = tables.Product_Subfamily(product_subfamily_name=i, family_id=random.choice(
+            list(parts.families.keys())))
+        s.add(data)
+        s.commit()
+    s.close()
+    print('Product sub-family table has been populated.')
+
+
+countries()
+states_provs()
 customers(100)
+families()
+subfamilies()
