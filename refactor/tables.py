@@ -174,3 +174,6 @@ view_defs = ("""create or replace view current_product_prices as
 for v in view_defs:
     session.execute(v)
 print('All views have been created.')
+
+
+session.close()
