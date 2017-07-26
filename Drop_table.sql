@@ -1,4 +1,5 @@
-use demo;
+use electronics;
+-- use demo;
 drop table order_line;
 drop table order_header;
 drop table customer;
