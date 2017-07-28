@@ -1,5 +1,6 @@
 import random
 from string import ascii_uppercase, digits
+from datetime import datetime
 
 families = {1: 'Electronic Kits & Modules', 2: 'Test & Measurment', 3: 'Tools & Equipment',
             4: 'Components & Hardware'}
@@ -31,7 +32,7 @@ def name():
     return '{0} {1}'.format(random.choice(adjectives), random.choice(nouns))
 
 
-def description(self):
+def description():
     descriptions = ('FLIP-FLOP, 2 CIRCUITS', 'Logic IC Case Style',
                     'PDIP', 'No. of Pins: 14', 'Case Style: PDIP', 'Single Transmitter/Receiver',
                     'RS-422/RS-485', '8-Pin PDIP Tube', 'XOR Gate', '4-Element', '2-IN Bipolar',
@@ -45,6 +46,17 @@ def description(self):
     return '{0} {1}'.format(random.choice(descriptions), random.choice(descriptions))
 
 
-def uom(self):
+def uom():
     uoms = ('Each', 'Case', '12 Pack', 'Pallet', '24 Pack')
     return random.choice(uoms)
+
+shipping_description = {'Priority': 40, 'One Day': 25, 'Two Day': 10, 'Standard': 5,
+                        'No Rush': 0}
+
+
+def future_date():
+    year = random.choice(range(2017, 2018))
+    month = random.choice(range(8, 13))
+    day = random.choice(range(1, 30))
+    schedule_date = datetime(year, month, day)
+    return schedule_date

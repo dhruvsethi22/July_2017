@@ -9,7 +9,41 @@ metadata = MetaData()
 Session = sessionmaker(bind=mysql.engine)
 session = Session()
 
-# Product Tables
+
+class Country(Base):
+    __tablename__ = 'countries'
+    country_id = Column(Integer, primary_key=True)
+    country_name = Column(String(500))
+    created_date = Column(DateTime)
+    last_updated_date = Column(DateTime)
+    states_provs = relationship(
+        "State_Prov", backref="country", lazy='dynamic')
+    customer = relationship("Customer", backref="country", lazy="dynamic")
+
+
+class State_Prov(Base):
+    __tablename__ = 'states_provs'
+    state_prov_id = Column(Integer, primary_key=True)
+    state_name = Column(String(500))
+    country_id = Column(Integer, ForeignKey(Country.country_id))
+    created_date = Column(DateTime)
+    last_updated_date = Column(DateTime)
+    customer = relationship("Customer", backref="states_provs", lazy="dynamic")
+
+
+class Customer(Base):
+    __tablename__ = 'customers'
+    customer_id = Column(Integer, primary_key=True)
+    customer_name = Column(String(500))
+    address = Column(String(100))
+    city = Column(String(100))
+    state_prov_id = Column(Integer, ForeignKey(State_Prov.state_prov_id))
+    country_id = Column(Integer, ForeignKey(Country.country_id))
+    postal_code = Column(String(20))
+    ship_to = Column(Integer)
+    sold_to = Column(Integer)
+    created_date = Column(DateTime)
+    last_updated_date = Column(DateTime)
 
 
 class Product_Family(Base):
@@ -65,38 +99,11 @@ class ProductPrice(Base):
     list_price = Column(Numeric)
 
 
-class Country(Base):
-    __tablename__ = 'countries'
-    country_id = Column(Integer, primary_key=True)
-    country_name = Column(String(500))
-    created_date = Column(DateTime)
-    last_updated_date = Column(DateTime)
-    states_provs = relationship(
-        "State_Prov", backref="country", lazy='dynamic')
-    customer = relationship("Customer", backref="country", lazy="dynamic")
-
-
-class State_Prov(Base):
-    __tablename__ = 'states_provs'
-    state_prov_id = Column(Integer, primary_key=True)
-    state_name = Column(String(500))
-    country_id = Column(Integer, ForeignKey(Country.country_id))
-    created_date = Column(DateTime)
-    last_updated_date = Column(DateTime)
-    customer = relationship("Customer", backref="states_provs", lazy="dynamic")
-
-
-class Customer(Base):
-    __tablename__ = 'customers'
-    customer_id = Column(Integer, primary_key=True)
-    customer_name = Column(String(500))
-    address = Column(String(100))
-    city = Column(String(100))
-    state_prov_id = Column(Integer, ForeignKey(State_Prov.state_prov_id))
-    country_id = Column(Integer, ForeignKey(Country.country_id))
-    postal_code = Column(String(20))
-    ship_to = Column(Integer)
-    sold_to = Column(Integer)
+class Shipping_Type(Base):
+    __tablename__ = 'shipping_types'
+    shipping_type_id = Column(Integer, primary_key=True)
+    description = Column(String(100))
+    cost = Column(Integer)
     created_date = Column(DateTime)
     last_updated_date = Column(DateTime)
 
@@ -112,15 +119,6 @@ class Order_Header(Base):
     created_date = Column(DateTime)
     last_updated_date = Column(DateTime)
     #soldid = relationship(Customers.Customer(), foreign_keys=Customers.Customer.customer_id)
-
-
-class Shipping_Type(Base):
-    __tablename__ = 'shipping_types'
-    shipping_type_id = Column(Integer, primary_key=True)
-    description = Column(String(100))
-    cost = Column(Integer)
-    created_date = Column(DateTime)
-    last_updated_date = Column(DateTime)
 
 
 class Order_Line(Base):
@@ -146,10 +144,14 @@ class Order_Line(Base):
 
 
 # Drop and create tables
-Base.metadata.drop_all(mysql.engine)
-print('All tables have been dropped.')
-Base.metadata.create_all(mysql.engine)
-print('All tables have been created.')
+def drop_all():
+    Base.metadata.drop_all(mysql.engine)
+    print('All tables have been dropped.')
+
+
+def add_all():
+    Base.metadata.create_all(mysql.engine)
+    print('All tables have been created.')
 
 # Define views
 view_defs = ("""create or replace view current_product_prices as
@@ -171,9 +173,10 @@ view_defs = ("""create or replace view current_product_prices as
              )
 
 # Create views
-for v in view_defs:
-    session.execute(v)
-print('All views have been created.')
 
 
-session.close()
+def add_views():
+    for v in view_defs:
+        session.execute(v)
+    session.close()
+    print('All views have been created.')
