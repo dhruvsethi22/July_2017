@@ -78,9 +78,9 @@ class ProductCost(Base):
     __tablename__ = 'product_costs'
     cost_id = Column(Integer, primary_key=True)
     product_id = Column(Integer)
-    mtl_cost = Column(Numeric)
-    labor_cost = Column(Numeric)
-    burden_cost = Column(Numeric)
+    mtl_cost = Column(Numeric(precision=4, scale=2))
+    labor_cost = Column(Numeric(precision=4, scale=2))
+    burden_cost = Column(Numeric(precision=4, scale=2))
 
 
 class PriceList(Base):
@@ -96,7 +96,7 @@ class ProductPrice(Base):
     price_id = Column(Integer, primary_key=True)
     price_list_id = Column(Integer, ForeignKey(PriceList.price_list_id))
     product_id = Column(Integer, ForeignKey(Product.product_id))
-    list_price = Column(Numeric)
+    list_price = Column(Numeric(precision=4, scale=2))
 
 
 class Shipping_Type(Base):

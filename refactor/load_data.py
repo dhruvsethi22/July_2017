@@ -2,7 +2,7 @@ from sqlalchemy.orm import sessionmaker
 from faker import Faker
 import datetime
 import random
-# import time
+import time
 
 import mysql_connection as mysql
 import tables
@@ -86,21 +86,24 @@ def subfamilies():
 def products(number):
     row = [(x.subfamily_id, x.family_id)
            for x in session.query(tables.Product_Subfamily)]
-    for i in range(0, number):
+
+    def create_product(row):
         ids = random.choice(row)
-        data = tables.Product(product_number=data_methods.number(),
+        return tables.Product(product_number=data_methods.number(),
                               product_name=data_methods.name(),
                               description=data_methods.description(),
                               uom=data_methods.uom(),
                               subfamily_id=ids[0],
                               family_id=ids[1])
-        session.add(data)
+
+    products = [create_product(row) for i in range(0, number)]
+    session.bulk_save_objects(products)
     session.commit()
-    print('products table has been populated.')
 
 
 def costs():
     products = (x.product_id for x in session.query(tables.Product))
+    costs = []
     for i in products:
         for i in range(0, 4):
             data = tables.ProductCost(product_id=i,
@@ -111,7 +114,8 @@ def costs():
                                       burden_cost=round(
                                           random.uniform(.1, 10), 2)
                                       )
-            session.add(data)
+            costs.append(data)
+    session.bulk_save_objects(costs)
     session.commit()
     print('product_costs table has been populated.')
 
@@ -130,6 +134,7 @@ def price_list():
 def prices():
     products = [x.product_id for x in session.query(tables.Product)]
     price_lists = [x.price_list_id for x in session.query(tables.PriceList)]
+    prices = []
     for i in products:
         for x in price_lists:
             data = tables.ProductPrice(price_list_id=x,
@@ -138,7 +143,8 @@ def prices():
                                            random.uniform(1, 100), 2)
                                        )
 
-            session.add(data)
+            prices.append(data)
+    session.bulk_save_objects(prices)
     session.commit()
     print('products_prices has been populated.')
 
@@ -155,11 +161,15 @@ def shipping():
 
 def header(number):
     customers = [x.customer_id for x in session.query(tables.Customer)]
+    now = datetime.datetime.utcnow()
+    headers = []
     for i in range(0, number):
         header_data = tables.Order_Header(order_number=data_methods.number(), sold_to_id=random.choice(customers),
-                                          po_id=fake_data.ean8(), currency=fake_data.currency_code(), created_date=datetime.datetime.utcnow(),
-                                          last_updated_date=datetime.datetime.utcnow())
-        session.add(header_data)
+                                          po_id=fake_data.ean8(), currency=fake_data.currency_code(),
+                                          created_date=now,
+                                          last_updated_date=now)
+        headers.append(header_data)
+    session.bulk_save_objects(headers)
     session.commit()
     print('Order Headers has been populated')
 
@@ -171,18 +181,22 @@ def line():
         tables.Shipping_Type)]
     header_ids = (x.header_id for x in session.query(tables.Order_Header))
     now = datetime.datetime.utcnow()
-    for h in header_ids:
-        for i in range(0, 5):
-            product_price = random.choice(product_prices)
-            data = tables.Order_Line(header_id=h, shipping_type_id=random.choice(shipping_type_ids),
-                                     schedule_ship_date=data_methods.future_date(), quantity=random.randint(1, 10),
-                                     product_id=product_price[
-                                         0], price_list_id=product_price[1],
-                                     discount=random.randint(10, 20),
-                                     created_date=now, last_updated_date=now)
-            data.net_price = (product_price[2] -
-                              (product_price[2] / data.discount))
-            session.add(data)
+
+    def create_line(header_id, product_price):
+        product_price = random.choice(product_prices)
+        data = tables.Order_Line(header_id=header_id, shipping_type_id=random.choice(shipping_type_ids),
+                                 schedule_ship_date=data_methods.future_date(), quantity=random.randint(1, 10),
+                                 product_id=product_price[0],
+                                 price_list_id=product_price[1],
+                                 discount=random.randint(10, 20),
+                                 created_date=now, last_updated_date=now)
+        data.net_price = (product_price[2] -
+                          (product_price[2] / data.discount))
+        return data
+
+    order_lines = [create_line(i, product_prices)
+                   for i in header_ids for x in range(0, 5)]
+    session.bulk_save_objects(order_lines)
     session.commit()
     print('Order lines has been populated')
 
@@ -204,9 +218,11 @@ prices()
 shipping()
 header(10000)
 line()
+
 session.close()
 
 script_end = datetime.datetime.now()
 
 diff = script_end - script_start
-print(divmod(diff.days * 86400 + diff.seconds, 60))
+run_time = (divmod(diff.days * 86400 + diff.seconds, 60))
+print('Run time was {0} minutes {1} seconds'.format(run_time[0], run_time[1]))
