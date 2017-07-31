@@ -162,13 +162,10 @@ def shipping():
 def header(number):
     customers = [x.customer_id for x in session.query(tables.Customer)]
     now = datetime.datetime.utcnow()
-    headers = []
-    for i in range(0, number):
-        header_data = tables.Order_Header(order_number=data_methods.number(), sold_to_id=random.choice(customers),
-                                          po_id=fake_data.ean8(), currency=fake_data.currency_code(),
-                                          created_date=now,
-                                          last_updated_date=now)
-        headers.append(header_data)
+    headers = [tables.Order_Header(order_number=data_methods.number(), sold_to_id=random.choice(customers),
+                                   po_id=fake_data.ean8(), currency=fake_data.currency_code(),
+                                   created_date=now,
+                                   last_updated_date=now) for i in range(0, number)]
     session.bulk_save_objects(headers)
     session.commit()
     print('Order Headers has been populated')
