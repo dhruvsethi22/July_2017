@@ -213,7 +213,7 @@ costs()
 price_list()
 prices()
 shipping()
-header(10000)
+header(100000)
 line()
 
 session.close()
