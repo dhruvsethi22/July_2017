@@ -159,7 +159,7 @@ view_defs = ("""create or replace view current_product_prices as
 				from products_prices pp
 				inner join price_lists pl
 				on pp.price_list_id = pl.price_list_id
-				where pl.price_list_id = true""",
+				where pl.active = true""",
              """create or replace view current_product_costs as
 			    select pc.product_id, pc.mtl_cost, pc.labor_cost, 
 			    pc.burden_cost, pc.cost_id

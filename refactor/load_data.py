@@ -2,7 +2,6 @@ from sqlalchemy.orm import sessionmaker
 from faker import Faker
 import datetime
 import random
-import time
 
 import mysql_connection as mysql
 import tables
@@ -104,8 +103,8 @@ def products(number):
 def costs():
     products = (x.product_id for x in session.query(tables.Product))
     costs = []
-    for i in products:
-        for i in range(0, 4):
+    for i in range(0, 4):
+        for i in products:
             data = tables.ProductCost(product_id=i,
                                       mtl_cost=round(
                                           random.uniform(.1, 10), 2),
@@ -213,7 +212,7 @@ costs()
 price_list()
 prices()
 shipping()
-header(100000)
+header(10000)
 line()
 
 session.close()
