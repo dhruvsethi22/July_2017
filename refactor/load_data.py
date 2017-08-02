@@ -24,7 +24,7 @@ def countries():
             last_updated_date=datetime.datetime.utcnow())
         session.add(data)
     session.commit()
-    print('Countries table has been populated.')
+    print('Countries are populated.')
 
 
 def states_provs():
@@ -48,7 +48,7 @@ def states_provs():
                                  last_updated_date=datetime.datetime.utcnow())
         session.add(data)
     session.commit()
-    print('States and Provs table has been populated.')
+    print('States and Provs are populated.')
 
 
 def customers(number):
@@ -61,7 +61,7 @@ def customers(number):
                                last_updated_date=datetime.datetime.utcnow())
         session.add(data)
     session.commit()
-    print('Customers table has been populated.')
+    print('Customers are populated.')
 
 
 def families():
@@ -70,7 +70,7 @@ def families():
                                      product_family_name=v)
         session.add(data)
     session.commit()
-    print('Product Family table has been populated.')
+    print('Product Families are populated.')
 
 
 def subfamilies():
@@ -79,7 +79,7 @@ def subfamilies():
             list(data_methods.families.keys())))
         session.add(data)
     session.commit()
-    print('Product sub-family table has been populated.')
+    print('Product Sub-Families are populated.')
 
 
 def products(number):
@@ -98,6 +98,7 @@ def products(number):
     products = [create_product(row) for i in range(0, number)]
     session.bulk_save_objects(products)
     session.commit()
+    print('Products are populated.')
 
 
 def costs():
@@ -116,7 +117,7 @@ def costs():
             costs.append(data)
     session.bulk_save_objects(costs)
     session.commit()
-    print('product_costs table has been populated.')
+    print('Product Costs are populated.')
 
 
 def price_list():
@@ -127,7 +128,7 @@ def price_list():
     for d in data:
         session.add(d)
     session.commit()
-    print('price_lists has been populated.')
+    print('Price Lists are populated.')
 
 
 def prices():
@@ -145,7 +146,7 @@ def prices():
             prices.append(data)
     session.bulk_save_objects(prices)
     session.commit()
-    print('products_prices has been populated.')
+    print('Product Prices are populated.')
 
 
 def shipping():
@@ -155,7 +156,7 @@ def shipping():
                                     last_updated_date=datetime.datetime.utcnow())
         session.add(data)
     session.commit()
-    print('Shipping Types has been populated.')
+    print('Shipping Types are populated.')
 
 
 def header(number):
@@ -167,7 +168,7 @@ def header(number):
                                    last_updated_date=now) for i in range(0, number)]
     session.bulk_save_objects(headers)
     session.commit()
-    print('Order Headers has been populated')
+    print('Order Headers are populated.')
 
 
 def line():
@@ -194,7 +195,7 @@ def line():
                    for i in header_ids for x in range(0, 5)]
     session.bulk_save_objects(order_lines)
     session.commit()
-    print('Order lines has been populated')
+    print('Order lines are populated.')
 
 script_start = datetime.datetime.now()
 
@@ -215,10 +216,12 @@ shipping()
 header(10000)
 line()
 
+
 session.close()
 
 script_end = datetime.datetime.now()
 
 diff = script_end - script_start
 run_time = (divmod(diff.days * 86400 + diff.seconds, 60))
+print('The database is hydrated, yo!')
 print('Run time was {0} minutes {1} seconds'.format(run_time[0], run_time[1]))
