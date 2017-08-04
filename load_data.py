@@ -104,7 +104,7 @@ def products(number):
 def costs():
     products = (x.product_id for x in session.query(tables.Product))
     costs = []
-    for i in range(0, 4):
+    for x in range(0, 4):
         for i in products:
             data = tables.ProductCost(product_id=i,
                                       mtl_cost=round(
