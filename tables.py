@@ -113,12 +113,13 @@ class Order_Header(Base):
     header_id = Column(Integer, primary_key=True)
     order_number = Column(String(20))
     sold_to_id = Column(String(20))
-    #ship_to_id = Column(String(20))
+    # ship_to_id = Column(String(20))
     po_id = Column(String(20))
     currency = Column(String(5))
     created_date = Column(DateTime)
     last_updated_date = Column(DateTime)
-    #soldid = relationship(Customers.Customer(), foreign_keys=Customers.Customer.customer_id)
+    # soldid = relationship(Customers.Customer(),
+    # foreign_keys=Customers.Customer.customer_id)
 
 
 class Order_Line(Base):
@@ -161,7 +162,7 @@ view_defs = ("""create or replace view current_product_prices as
 				on pp.price_list_id = pl.price_list_id
 				where pl.active = true""",
              """create or replace view current_product_costs as
-			    select pc.product_id, pc.mtl_cost, pc.labor_cost, 
+			    select pc.product_id, pc.mtl_cost, pc.labor_cost,
 			    pc.burden_cost, pc.cost_id
 				from product_costs pc
 				 inner join (
@@ -169,7 +170,23 @@ view_defs = ("""create or replace view current_product_prices as
 				   from product_costs
 				   group by 2
 				   ) most_recent
-				 on pc.cost_id = most_recent.cost_id"""
+				 on pc.cost_id = most_recent.cost_id""",
+             """create or replace view order_details as
+               select ol.line_id, ol.schedule_ship_date, ol.quantity,
+               ol.discount, ol.product_id, ol.net_price, oh.order_number, oh.po_id,
+               c.customer_name, c.city, sp.state_name, ct.country_name, p.product_number,
+               p.product_name, p.description, p.uom, ps.product_subfamily_name, pf.product_family_name
+               from order_lines ol inner join  order_headers oh
+               on ol.header_id = oh.header_id
+               inner join customers c
+               on oh.sold_to_id = c.customer_id
+               inner join countries ct
+               on c.country_id = ct.country_id
+               inner join states_provs sp 
+               on c.state_prov_id = sp.state_prov_id
+               inner join products p on ol.product_id = p.product_id
+               inner join product_subfamily ps on p.subfamily_id = ps.subfamily_id
+               inner join product_family pf on p.family_id = pf.family_id"""
              )
 
 # Create views
