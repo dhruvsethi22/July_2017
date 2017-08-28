@@ -183,7 +183,8 @@ def line():
     header_ids = (x.header_id for x in session.query(tables.Order_Header))
     now = datetime.datetime.utcnow()
 
-    def create_line(header_id, product_price):
+    def create_line(header_id):
+        # def create_line(header_id, product_price):
         product_price = random.choice(product_prices)
         data = tables.Order_Line(header_id=header_id, shipping_type_id=random.choice(shipping_type_ids),
                                  schedule_ship_date=data_methods.future_date(), quantity=random.randint(1, 20),
@@ -195,9 +196,9 @@ def line():
                           (product_price[2] / data.discount))
         return data
 
-    # order_lines = [create_line(i, product_prices)
+    # order_lines = [create_line(i)
     #                for i in header_ids for x in range(0, 5)]
-    order_lines = [create_line(i, product_prices)
+    order_lines = [create_line(i)
                    for i in header_ids for x in range(0, random.randint(1, 12))]
     session.bulk_save_objects(order_lines)
     session.commit()
