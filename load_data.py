@@ -2,6 +2,7 @@ from sqlalchemy.orm import sessionmaker
 from faker import Faker
 import datetime
 import random
+import itertools
 
 import mysql_connection as mysql
 import tables
@@ -160,7 +161,10 @@ def shipping():
 
 
 def header(number):
-    customers = [x.customer_id for x in session.query(tables.Customer)]
+    customer_weights = [1, 2, 5, 10, 15, 20, 50]
+    customers = list(itertools.chain.from_iterable(
+        [[x.customer_id] * random.choice(customer_weights) for x in session.query(tables.Customer)]))
+    # customers = [x.customer_id for x in session.query(tables.Customer)]
     now = datetime.datetime.utcnow()
     headers = [tables.Order_Header(order_number=data_methods.number(), sold_to_id=random.choice(customers),
                                    po_id=fake_data.ean8(), currency=fake_data.currency_code(),
