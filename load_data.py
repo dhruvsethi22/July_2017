@@ -186,7 +186,7 @@ def line():
     def create_line(header_id, product_price):
         product_price = random.choice(product_prices)
         data = tables.Order_Line(header_id=header_id, shipping_type_id=random.choice(shipping_type_ids),
-                                 schedule_ship_date=data_methods.future_date(), quantity=random.randint(1, 10),
+                                 schedule_ship_date=data_methods.future_date(), quantity=random.randint(1, 20),
                                  product_id=product_price[0],
                                  price_list_id=product_price[1],
                                  discount=random.randint(10, 20),
