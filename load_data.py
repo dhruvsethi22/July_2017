@@ -195,8 +195,10 @@ def line():
                           (product_price[2] / data.discount))
         return data
 
+    # order_lines = [create_line(i, product_prices)
+    #                for i in header_ids for x in range(0, 5)]
     order_lines = [create_line(i, product_prices)
-                   for i in header_ids for x in range(0, 5)]
+                   for i in header_ids for x in range(0, random.randint(1, 12))]
     session.bulk_save_objects(order_lines)
     session.commit()
     print('Order lines are populated.')
