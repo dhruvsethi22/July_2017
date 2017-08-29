@@ -3,6 +3,7 @@ from faker import Faker
 import datetime
 import random
 import itertools
+import time
 
 import mysql_connection as mysql
 import tables
@@ -18,11 +19,12 @@ fake_data = Faker()
 
 def countries():
     countries = ['USA']
+    now = datetime.datetime.utcnow()
     for c in countries:
         data = tables.Country(
             country_name=c,
-            created_date=datetime.datetime.utcnow(),
-            last_updated_date=datetime.datetime.utcnow())
+            created_date=now,
+            last_updated_date=now)
         session.add(data)
     session.commit()
     print('Countries are populated.')
@@ -42,11 +44,12 @@ def states_provs():
         'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington',
         'West Virginia', 'Wisconsin', 'Wyoming',
     )
+    now = datetime.datetime.utcnow()
     for s in states:
         data = tables.State_Prov(state_name=s,
                                  country=country,
-                                 created_date=datetime.datetime.utcnow(),
-                                 last_updated_date=datetime.datetime.utcnow())
+                                 created_date=now,
+                                 last_updated_date=now)
         session.add(data)
     session.commit()
     print('States and Provs are populated.')
@@ -164,7 +167,6 @@ def header(number):
     customer_weights = [1, 2, 5, 10, 15, 20, 50]
     customers = list(itertools.chain.from_iterable(
         [[x.customer_id] * random.choice(customer_weights) for x in session.query(tables.Customer)]))
-    # customers = [x.customer_id for x in session.query(tables.Customer)]
     now = datetime.datetime.utcnow()
     headers = [tables.Order_Header(order_number=data_methods.number(), sold_to_id=random.choice(customers),
                                    po_id=fake_data.ean8(), currency=fake_data.currency_code(),
@@ -176,36 +178,44 @@ def header(number):
 
 
 def line():
-    product_prices = [[x.product_id, x.price_list_id, x.list_price] for x in session.query(tables.ProductPrice).filter(
-        tables.ProductPrice.price_list_id == 3)]
+    product_weights = (1, 2, 3, 4, 5)
+    product_prices = tuple(itertools.chain.from_iterable([[[x.product_id, x.price_list_id, x.list_price]] * random.choice(product_weights) for x in session.query(tables.ProductPrice).filter(
+        tables.ProductPrice.price_list_id == 3)]))
     shipping_type_ids = [x.shipping_type_id for x in session.query(
         tables.Shipping_Type)]
     header_ids = (x.header_id for x in session.query(tables.Order_Header))
     now = datetime.datetime.utcnow()
+    quantity = range(0, 20)
+    discount = range(10, 20)
 
     def create_line(header_id):
-        # def create_line(header_id, product_price):
         product_price = random.choice(product_prices)
         data = tables.Order_Line(header_id=header_id, shipping_type_id=random.choice(shipping_type_ids),
-                                 schedule_ship_date=data_methods.future_date(), quantity=random.randint(1, 20),
+                                 schedule_ship_date=data_methods.future_date(),
+                                 quantity=random.choice(quantity),
                                  product_id=product_price[0],
                                  price_list_id=product_price[1],
-                                 discount=random.randint(10, 20),
+                                 discount=random.choice(discount),
                                  created_date=now, last_updated_date=now)
         data.net_price = (product_price[2] -
                           (product_price[2] / data.discount))
         return data
 
-    # order_lines = [create_line(i)
-    #                for i in header_ids for x in range(0, 5)]
+    # this is for testing purposes
+    start = time.time()
     order_lines = [create_line(i)
-                   for i in header_ids for x in range(0, random.randint(1, 12))]
+                   for i in header_ids for x in range(0, 5)]
+    # order_lines = [create_line(i)
+    # for i in header_ids for x in range(0, random.randint(1, 8))]
     session.bulk_save_objects(order_lines)
+    end = time.time()
     session.commit()
-    print('Order lines are populated.')
+    print('This part of the method took {} seconds'.format(end - start))
+    print('{} order lines have been added to the database.'.format(
+        len(order_lines)))
 
-script_start = datetime.datetime.now()
 
+script_start = time.time()
 tables.drop_all()
 tables.add_all()
 tables.add_views()
@@ -226,9 +236,7 @@ line()
 
 session.close()
 
-script_end = datetime.datetime.now()
+script_end = time.time()
 
-diff = script_end - script_start
-run_time = (divmod(diff.days * 86400 + diff.seconds, 60))
 print('The database is hydrated, yo!')
-print('Run time was {0} minutes {1} seconds'.format(run_time[0], run_time[1]))
+print('Run time was {} seconds'.format(script_end - script_start))
