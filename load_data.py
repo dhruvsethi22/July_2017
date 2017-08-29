@@ -167,7 +167,8 @@ def shipping():
 def header(number):
     customer_weights = (1, 2, 5, 10, 15, 20, 50)
     customers = list(itertools.chain.from_iterable(
-        [[x.customer_id] * random.choice(customer_weights) for x in session.query(tables.Customer)]))
+        [[x[0]] * random.choice(customer_weights) for x in session.query(tables.Customer.customer_id)]))
+
     now = datetime.datetime.utcnow()
     headers = [tables.Order_Header(order_number=data_methods.number(), sold_to_id=random.choice(customers),
                                    po_id=fake_data.ean8(), currency=fake_data.currency_code(),
@@ -204,8 +205,9 @@ def line():
                           (product_price[2] / data.discount))
         return data
 
+    line_range = range(1, 8)
     order_lines = [create_line(i)
-                   for i in header_ids for x in range(0, random.randint(1, 8))]
+                   for i in header_ids for x in range(0, random.choice(line_range))]
     session.bulk_save_objects(order_lines)
     session.commit()
     print('{} order lines have been added to the database.'.format(
