@@ -60,7 +60,7 @@ def customers(number):
     state_prov = [x.state_prov_id for x in session.query(tables.State_Prov)]
     now = datetime.datetime.utcnow()
     for i in range(0, number):
-        data = tables.Customer(customer_name=fake_data.name(), address=fake_data.street_address(), city=fake_data.city(),
+        data = tables.Customer(customer_name=fake_data.company(), address=fake_data.street_address(), city=fake_data.city(),
                                state_prov_id=random.choice(state_prov), country_id=random.choice(countries), ship_to=random.randint(0, 1), sold_to=random.randint(0, 1),
                                postal_code=fake_data.postalcode(), created_date=now,
                                last_updated_date=now)
@@ -171,7 +171,7 @@ def header(number):
 
     now = datetime.datetime.utcnow()
     headers = [tables.Order_Header(order_number=data_methods.number(), sold_to_id=random.choice(customers),
-                                   po_id=fake_data.ean8(), currency=fake_data.currency_code(),
+                                   po_id=fake_data.ean8(), currency='USD',
                                    created_date=now,
                                    last_updated_date=now) for i in range(0, number)]
     session.bulk_save_objects(headers)
