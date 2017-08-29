@@ -58,11 +58,12 @@ def states_provs():
 def customers(number):
     countries = [x.country_id for x in session.query(tables.Country)]
     state_prov = [x.state_prov_id for x in session.query(tables.State_Prov)]
+    now = datetime.datetime.utcnow()
     for i in range(0, number):
         data = tables.Customer(customer_name=fake_data.name(), address=fake_data.street_address(), city=fake_data.city(),
                                state_prov_id=random.choice(state_prov), country_id=random.choice(countries), ship_to=random.randint(0, 1), sold_to=random.randint(0, 1),
-                               postal_code=fake_data.postalcode(), created_date=datetime.datetime.utcnow(),
-                               last_updated_date=datetime.datetime.utcnow())
+                               postal_code=fake_data.postalcode(), created_date=now,
+                               last_updated_date=now)
         session.add(data)
     session.commit()
     print('Customers are populated.')
@@ -164,7 +165,7 @@ def shipping():
 
 
 def header(number):
-    customer_weights = [1, 2, 5, 10, 15, 20, 50]
+    customer_weights = (1, 2, 5, 10, 15, 20, 50)
     customers = list(itertools.chain.from_iterable(
         [[x.customer_id] * random.choice(customer_weights) for x in session.query(tables.Customer)]))
     now = datetime.datetime.utcnow()
@@ -178,12 +179,14 @@ def header(number):
 
 
 def line():
-    product_weights = (1, 2, 3, 4, 5)
-    product_prices = tuple(itertools.chain.from_iterable([[[x.product_id, x.price_list_id, x.list_price]] * random.choice(product_weights) for x in session.query(tables.ProductPrice).filter(
+    weights = (1, 2, 3, 4, 5)
+    product_prices = tuple(itertools.chain.from_iterable([[[x.product_id, x.price_list_id, x.list_price]] * random.choice(weights) for x in session.query(tables.ProductPrice).filter(
         tables.ProductPrice.price_list_id == 3)]))
     shipping_type_ids = [x.shipping_type_id for x in session.query(
         tables.Shipping_Type)]
     header_ids = (x.header_id for x in session.query(tables.Order_Header))
+    ship_dates = tuple(itertools.chain.from_iterable(
+        [[data_methods.future_date()] * random.choice(weights) for i in range(0, 30)]))
     now = datetime.datetime.utcnow()
     quantity = range(0, 20)
     discount = range(10, 20)
@@ -191,7 +194,7 @@ def line():
     def create_line(header_id):
         product_price = random.choice(product_prices)
         data = tables.Order_Line(header_id=header_id, shipping_type_id=random.choice(shipping_type_ids),
-                                 schedule_ship_date=data_methods.future_date(),
+                                 schedule_ship_date=random.choice(ship_dates),
                                  quantity=random.choice(quantity),
                                  product_id=product_price[0],
                                  price_list_id=product_price[1],
@@ -201,16 +204,10 @@ def line():
                           (product_price[2] / data.discount))
         return data
 
-    # this is for testing purposes
-    start = time.time()
     order_lines = [create_line(i)
-                   for i in header_ids for x in range(0, 5)]
-    # order_lines = [create_line(i)
-    # for i in header_ids for x in range(0, random.randint(1, 8))]
+                   for i in header_ids for x in range(0, random.randint(1, 8))]
     session.bulk_save_objects(order_lines)
-    end = time.time()
     session.commit()
-    print('This part of the method took {} seconds'.format(end - start))
     print('{} order lines have been added to the database.'.format(
         len(order_lines)))
 
@@ -230,7 +227,7 @@ costs()
 price_list()
 prices()
 shipping()
-header(10000)
+header(50000)
 line()
 
 
