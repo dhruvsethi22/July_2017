@@ -227,7 +227,7 @@ costs()
 price_list()
 prices()
 shipping()
-header(50000)
+header(500000)
 line()
 
 
