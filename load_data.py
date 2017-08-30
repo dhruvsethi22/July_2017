@@ -41,8 +41,8 @@ def states_provs():
         'West Virginia', 'Wisconsin', 'Wyoming',
     )
     for s in states:
-        data = tables.State_Prov(state_name=s,
-                                 country=country)
+        data = tables.StateProv(state_name=s,
+                                country=country)
         session.add(data)
     session.commit()
     print('States and Provs are populated.')
@@ -50,7 +50,7 @@ def states_provs():
 
 def customers(number):
     countries = [x.country_id for x in session.query(tables.Country)]
-    state_prov = [x.state_prov_id for x in session.query(tables.State_Prov)]
+    state_prov = [x.state_prov_id for x in session.query(tables.StateProv)]
     for i in range(0, number):
         data = tables.Customer(customer_name=fake_data.company(), address=fake_data.street_address(), city=fake_data.city(),
                                state_prov_id=random.choice(state_prov), country_id=random.choice(countries),
@@ -63,8 +63,8 @@ def customers(number):
 
 def families():
     for k, v in data_methods.families.items():
-        data = tables.Product_Family(family_id=k,
-                                     product_family_name=v)
+        data = tables.ProductFamily(family_id=k,
+                                    product_family_name=v)
         session.add(data)
     session.commit()
     print('Product Families are populated.')
@@ -72,7 +72,7 @@ def families():
 
 def subfamilies():
     for i in data_methods.subfamilies:
-        data = tables.Product_Subfamily(product_subfamily_name=i, family_id=random.choice(
+        data = tables.ProductSubfamily(product_subfamily_name=i, family_id=random.choice(
             list(data_methods.families.keys())))
         session.add(data)
     session.commit()
@@ -81,7 +81,7 @@ def subfamilies():
 
 def products(number):
     row = [(x.subfamily_id, x.family_id)
-           for x in session.query(tables.Product_Subfamily)]
+           for x in session.query(tables.ProductSubfamily)]
 
     def create_product(row):
         ids = random.choice(row)
@@ -148,8 +148,8 @@ def prices():
 
 def shipping():
     for k, v in data_methods.shipping_description.items():
-        data = tables.Shipping_Type(shipping_type_id=fake_data.ean8(), description=k,
-                                    cost=v)
+        data = tables.ShippingType(shipping_type_id=fake_data.ean8(), description=k,
+                                   cost=v)
         session.add(data)
     session.commit()
     print('Shipping Types are populated.')
@@ -160,9 +160,9 @@ def header(number):
     customers = list(itertools.chain.from_iterable(
         [[x[0]] * random.choice(customer_weights) for x in session.query(tables.Customer.customer_id)]))
 
-    headers = [tables.Order_Header(order_number=data_methods.number(), sold_to_id=random.choice(customers),
-                                   po_id=fake_data.ean8(), currency='USD',
-                                   ) for i in range(0, number)]
+    headers = [tables.OrderHeader(order_number=data_methods.number(), sold_to_id=random.choice(customers),
+                                  po_id=fake_data.ean8(), currency='USD',
+                                  ) for i in range(0, number)]
     session.bulk_save_objects(headers)
     session.commit()
     print('Order Headers are populated.')
@@ -173,8 +173,8 @@ def line():
     product_prices = tuple(itertools.chain.from_iterable([[[x.product_id, x.price_list_id, x.list_price]] * random.choice(weights) for x in session.query(tables.ProductPrice).filter(
         tables.ProductPrice.price_list_id == 3)]))
     shipping_type_ids = [x.shipping_type_id for x in session.query(
-        tables.Shipping_Type)]
-    header_ids = (x.header_id for x in session.query(tables.Order_Header))
+        tables.ShippingType)]
+    header_ids = (x.header_id for x in session.query(tables.OrderHeader))
     ship_dates = tuple(itertools.chain.from_iterable(
         [[data_methods.future_date()] * random.choice(weights) for i in range(0, 30)]))
     quantity = range(0, 20)
@@ -182,13 +182,13 @@ def line():
 
     def create_line(header_id):
         product_price = random.choice(product_prices)
-        data = tables.Order_Line(header_id=header_id, shipping_type_id=random.choice(shipping_type_ids),
-                                 schedule_ship_date=random.choice(ship_dates),
-                                 quantity=random.choice(quantity),
-                                 product_id=product_price[0],
-                                 price_list_id=product_price[1],
-                                 discount=random.choice(discount),
-                                 )
+        data = tables.OrderLine(header_id=header_id, shipping_type_id=random.choice(shipping_type_ids),
+                                schedule_ship_date=random.choice(ship_dates),
+                                quantity=random.choice(quantity),
+                                product_id=product_price[0],
+                                price_list_id=product_price[1],
+                                discount=random.choice(discount),
+                                )
         data.net_price = (product_price[2] -
                           (product_price[2] / data.discount))
         return data
@@ -204,7 +204,7 @@ def line():
     session.commit()
 
     print('{} order lines have been added to the database.'.format(
-        session.query(tables.Order_Line.line_id).count()))
+        session.query(tables.OrderLine.line_id).count()))
 
 
 script_start = time.time()
@@ -222,7 +222,7 @@ costs()
 price_list()
 prices()
 shipping()
-header(500000)
+header(1000)
 line()
 
 

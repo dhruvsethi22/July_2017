@@ -15,11 +15,11 @@ class Country(Base):
     country_id = Column(Integer, primary_key=True)
     country_name = Column(String(500))
     states_provs = relationship(
-        "State_Prov", backref="country", lazy='dynamic')
+        "StateProv", backref="country", lazy='dynamic')
     customer = relationship("Customer", backref="country", lazy="dynamic")
 
 
-class State_Prov(Base):
+class StateProv(Base):
     __tablename__ = 'states_provs'
     state_prov_id = Column(Integer, primary_key=True)
     state_name = Column(String(500))
@@ -33,22 +33,22 @@ class Customer(Base):
     customer_name = Column(String(500))
     address = Column(String(100))
     city = Column(String(100))
-    state_prov_id = Column(Integer, ForeignKey(State_Prov.state_prov_id))
+    state_prov_id = Column(Integer, ForeignKey(StateProv.state_prov_id))
     country_id = Column(Integer, ForeignKey(Country.country_id))
     postal_code = Column(String(20))
 
 
-class Product_Family(Base):
+class ProductFamily(Base):
     __tablename__ = 'product_family'
     family_id = Column(Integer, primary_key=True)
     product_family_name = Column(String(5000))
 
 
-class Product_Subfamily(Base):
+class ProductSubfamily(Base):
     __tablename__ = 'product_subfamily'
     subfamily_id = Column(Integer, primary_key=True)
     product_subfamily_name = Column(String(500))
-    family_id = Column(Integer, ForeignKey(Product_Family.family_id))
+    family_id = Column(Integer, ForeignKey(ProductFamily.family_id))
 
 
 class Product(Base):
@@ -59,8 +59,8 @@ class Product(Base):
     description = Column(String(2000))
     uom = Column(String(20))
     manufacturer_id = Column(Integer)
-    family_id = Column(Integer, ForeignKey(Product_Subfamily.family_id))
-    subfamily_id = Column(Integer, ForeignKey(Product_Subfamily.subfamily_id))
+    family_id = Column(Integer, ForeignKey(ProductSubfamily.family_id))
+    subfamily_id = Column(Integer, ForeignKey(ProductSubfamily.subfamily_id))
 
 
 class ProductCost(Base):
@@ -88,14 +88,14 @@ class ProductPrice(Base):
     list_price = Column(Numeric(precision=4, scale=2))
 
 
-class Shipping_Type(Base):
+class ShippingType(Base):
     __tablename__ = 'shipping_types'
     shipping_type_id = Column(Integer, primary_key=True)
     description = Column(String(100))
     cost = Column(Integer)
 
 
-class Order_Header(Base):
+class OrderHeader(Base):
     __tablename__ = 'order_headers'
     header_id = Column(Integer, primary_key=True)
     order_number = Column(String(20))
@@ -104,12 +104,12 @@ class Order_Header(Base):
     currency = Column(String(5))
 
 
-class Order_Line(Base):
+class OrderLine(Base):
     __tablename__ = 'order_lines'
     line_id = Column(Integer, primary_key=True)
-    header_id = Column(Integer, ForeignKey(Order_Header.header_id))
+    header_id = Column(Integer, ForeignKey(OrderHeader.header_id))
     shipping_type_id = Column(Integer, ForeignKey(
-        Shipping_Type.shipping_type_id))
+        ShippingType.shipping_type_id))
     line_number = Column(Integer)
     schedule_ship_date = Column(DateTime)
     quantity = Column(Integer)
