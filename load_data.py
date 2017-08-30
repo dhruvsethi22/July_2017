@@ -170,7 +170,7 @@ def line():
     header_ids = (x.header_id for x in session.query(tables.OrderHeader))
     ship_dates = tuple(itertools.chain.from_iterable(
         [[data_methods.future_date()] * random.choice(weights) for i in range(0, 30)]))
-    quantity = range(0, 20)
+    quantity = range(1, 20)
     discount = range(10, 20)
 
     def create_line(header_id):
