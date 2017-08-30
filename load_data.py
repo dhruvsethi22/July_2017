@@ -3,7 +3,6 @@ from faker import Faker
 import random
 import itertools
 import time
-
 import mysql_connection as mysql
 import tables
 import data_methods
@@ -54,7 +53,7 @@ def customers(number):
     state_prov = [x.state_prov_id for x in session.query(tables.State_Prov)]
     for i in range(0, number):
         data = tables.Customer(customer_name=fake_data.company(), address=fake_data.street_address(), city=fake_data.city(),
-                               state_prov_id=random.choice(state_prov), country_id=random.choice(countries), ship_to=random.randint(0, 1), sold_to=random.randint(0, 1),
+                               state_prov_id=random.choice(state_prov), country_id=random.choice(countries),
                                postal_code=fake_data.postalcode()
                                )
         session.add(data)
@@ -223,7 +222,7 @@ costs()
 price_list()
 prices()
 shipping()
-header(1000)
+header(500000)
 line()
 
 
