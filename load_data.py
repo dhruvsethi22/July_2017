@@ -8,21 +8,14 @@ import tables
 import data_methods
 
 
-engine = mysql.engine
-Session = sessionmaker(bind=mysql.engine)
-session = Session()
-
+session = sessionmaker(bind=mysql.transactions)()
 fake_data = Faker()
 
 
 def countries():
     countries = ['USA']
-    for c in countries:
-        data = tables.Country(
-            country_name=c
-        )
-        session.add(data)
-    session.commit()
+    session.bulk_save_objects(
+        [tables.Country(country_name=c) for c in countries])
     print('Countries are populated.')
 
 
@@ -41,8 +34,8 @@ def states_provs():
         'West Virginia', 'Wisconsin', 'Wyoming',
     )
     for s in states:
-        data = tables.StateProv(state_name=s,
-                                country=country)
+        data = (tables.StateProv(state_name=s,
+                                 country=country))
         session.add(data)
     session.commit()
     print('States and Provs are populated.')
@@ -148,7 +141,7 @@ def prices():
 
 def shipping():
     for k, v in data_methods.shipping_description.items():
-        data = tables.ShippingType(shipping_type_id=fake_data.ean8(), description=k,
+        data = tables.ShippingType(description=k,
                                    cost=v)
         session.add(data)
     session.commit()
@@ -161,7 +154,7 @@ def header(number):
         [[x[0]] * random.choice(customer_weights) for x in session.query(tables.Customer.customer_id)]))
 
     headers = [tables.OrderHeader(order_number=data_methods.number(), sold_to_id=random.choice(customers),
-                                  po_id=fake_data.ean8(), currency='USD',
+                                  currency='USD',
                                   ) for i in range(0, number)]
     session.bulk_save_objects(headers)
     session.commit()

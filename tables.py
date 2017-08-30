@@ -6,8 +6,7 @@ import mysql_connection as mysql
 
 Base = declarative_base()
 metadata = MetaData()
-Session = sessionmaker(bind=mysql.engine)
-session = Session()
+session = sessionmaker(bind=mysql.transactions)()
 
 
 class Country(Base):
@@ -100,7 +99,6 @@ class OrderHeader(Base):
     header_id = Column(Integer, primary_key=True)
     order_number = Column(String(20))
     sold_to_id = Column(Integer, ForeignKey(Customer.customer_id))
-    po_id = Column(String(20))
     currency = Column(String(5))
 
 
@@ -121,12 +119,12 @@ class OrderLine(Base):
 
 # Drop and create tables
 def drop_all():
-    Base.metadata.drop_all(mysql.engine)
+    Base.metadata.drop_all(mysql.transactions)
     print('All tables have been dropped.')
 
 
 def add_all():
-    Base.metadata.create_all(mysql.engine)
+    Base.metadata.create_all(mysql.transactions)
     print('All tables have been created.')
 
 # Define views
@@ -148,7 +146,7 @@ view_defs = ("""create or replace view current_product_prices as
 				 on pc.cost_id = most_recent.cost_id""",
              """create or replace view order_details as
                select ol.line_id, ol.schedule_ship_date, ol.quantity,
-               ol.discount, ol.product_id, ol.net_price, oh.order_number, oh.po_id,
+               ol.discount, ol.product_id, ol.net_price, oh.order_number,
                c.customer_name, c.city, sp.state_name, ct.country_name, p.product_number,
                p.product_name, p.description, p.uom, ps.product_subfamily_name, pf.product_family_name
                from order_lines ol inner join  order_headers oh
