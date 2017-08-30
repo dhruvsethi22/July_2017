@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, ForeignKey, Numeric, Boolean, Date, DateTime, MetaData, Float
+from sqlalchemy import Column, String, Integer, ForeignKey, Numeric, Boolean, Date, DateTime, MetaData, Float, func
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -14,8 +14,6 @@ class Country(Base):
     __tablename__ = 'countries'
     country_id = Column(Integer, primary_key=True)
     country_name = Column(String(500))
-    created_date = Column(DateTime)
-    last_updated_date = Column(DateTime)
     states_provs = relationship(
         "State_Prov", backref="country", lazy='dynamic')
     customer = relationship("Customer", backref="country", lazy="dynamic")
@@ -26,8 +24,6 @@ class State_Prov(Base):
     state_prov_id = Column(Integer, primary_key=True)
     state_name = Column(String(500))
     country_id = Column(Integer, ForeignKey(Country.country_id))
-    created_date = Column(DateTime)
-    last_updated_date = Column(DateTime)
     customer = relationship("Customer", backref="states_provs", lazy="dynamic")
 
 
@@ -42,8 +38,6 @@ class Customer(Base):
     postal_code = Column(String(20))
     ship_to = Column(Integer)
     sold_to = Column(Integer)
-    created_date = Column(DateTime)
-    last_updated_date = Column(DateTime)
 
 
 class Product_Family(Base):
@@ -104,8 +98,8 @@ class Shipping_Type(Base):
     shipping_type_id = Column(Integer, primary_key=True)
     description = Column(String(100))
     cost = Column(Integer)
-    created_date = Column(DateTime)
-    last_updated_date = Column(DateTime)
+    created_date = Column(DateTime, default=func.now())
+    last_updated_date = Column(DateTime, default=func.now())
 
 
 class Order_Header(Base):
@@ -116,8 +110,8 @@ class Order_Header(Base):
     # ship_to_id = Column(String(20))
     po_id = Column(String(20))
     currency = Column(String(5))
-    created_date = Column(DateTime)
-    last_updated_date = Column(DateTime)
+    created_date = Column(DateTime, default=func.now())
+    last_updated_date = Column(DateTime, default=func.now())
     # soldid = relationship(Customers.Customer(),
     # foreign_keys=Customers.Customer.customer_id)
 
@@ -135,8 +129,6 @@ class Order_Line(Base):
     price_list_id = Column(Integer)
     discount = Column(Float)
     net_price = Column(Float)
-    created_date = Column(DateTime)
-    last_updated_date = Column(DateTime)
     order_header = relationship(Order_Header)
     headerid = relationship(Order_Header, foreign_keys=header_id)
     shipping_types = relationship(Shipping_Type)
