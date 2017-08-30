@@ -1,32 +1,21 @@
 from sqlalchemy.orm import sessionmaker
 from faker import Faker
-import datetime
 import random
 import itertools
 import time
-
 import mysql_connection as mysql
 import tables
 import data_methods
 
 
-engine = mysql.engine
-Session = sessionmaker(bind=mysql.engine)
-session = Session()
-
+session = sessionmaker(bind=mysql.transactions)()
 fake_data = Faker()
 
 
 def countries():
     countries = ['USA']
-    now = datetime.datetime.utcnow()
-    for c in countries:
-        data = tables.Country(
-            country_name=c,
-            created_date=now,
-            last_updated_date=now)
-        session.add(data)
-    session.commit()
+    session.bulk_save_objects(
+        [tables.Country(country_name=c) for c in countries])
     print('Countries are populated.')
 
 
@@ -44,12 +33,9 @@ def states_provs():
         'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington',
         'West Virginia', 'Wisconsin', 'Wyoming',
     )
-    now = datetime.datetime.utcnow()
     for s in states:
-        data = tables.State_Prov(state_name=s,
-                                 country=country,
-                                 created_date=now,
-                                 last_updated_date=now)
+        data = (tables.StateProv(state_name=s,
+                                 country=country))
         session.add(data)
     session.commit()
     print('States and Provs are populated.')
@@ -57,13 +43,12 @@ def states_provs():
 
 def customers(number):
     countries = [x.country_id for x in session.query(tables.Country)]
-    state_prov = [x.state_prov_id for x in session.query(tables.State_Prov)]
-    now = datetime.datetime.utcnow()
+    state_prov = [x.state_prov_id for x in session.query(tables.StateProv)]
     for i in range(0, number):
         data = tables.Customer(customer_name=fake_data.company(), address=fake_data.street_address(), city=fake_data.city(),
-                               state_prov_id=random.choice(state_prov), country_id=random.choice(countries), ship_to=random.randint(0, 1), sold_to=random.randint(0, 1),
-                               postal_code=fake_data.postalcode(), created_date=now,
-                               last_updated_date=now)
+                               state_prov_id=random.choice(state_prov), country_id=random.choice(countries),
+                               postal_code=fake_data.postalcode()
+                               )
         session.add(data)
     session.commit()
     print('Customers are populated.')
@@ -71,8 +56,8 @@ def customers(number):
 
 def families():
     for k, v in data_methods.families.items():
-        data = tables.Product_Family(family_id=k,
-                                     product_family_name=v)
+        data = tables.ProductFamily(family_id=k,
+                                    product_family_name=v)
         session.add(data)
     session.commit()
     print('Product Families are populated.')
@@ -80,7 +65,7 @@ def families():
 
 def subfamilies():
     for i in data_methods.subfamilies:
-        data = tables.Product_Subfamily(product_subfamily_name=i, family_id=random.choice(
+        data = tables.ProductSubfamily(product_subfamily_name=i, family_id=random.choice(
             list(data_methods.families.keys())))
         session.add(data)
     session.commit()
@@ -89,7 +74,7 @@ def subfamilies():
 
 def products(number):
     row = [(x.subfamily_id, x.family_id)
-           for x in session.query(tables.Product_Subfamily)]
+           for x in session.query(tables.ProductSubfamily)]
 
     def create_product(row):
         ids = random.choice(row)
@@ -156,9 +141,8 @@ def prices():
 
 def shipping():
     for k, v in data_methods.shipping_description.items():
-        data = tables.Shipping_Type(shipping_type_id=fake_data.ean8(), description=k,
-                                    cost=v, created_date=datetime.datetime.utcnow(),
-                                    last_updated_date=datetime.datetime.utcnow())
+        data = tables.ShippingType(description=k,
+                                   cost=v)
         session.add(data)
     session.commit()
     print('Shipping Types are populated.')
@@ -169,11 +153,9 @@ def header(number):
     customers = list(itertools.chain.from_iterable(
         [[x[0]] * random.choice(customer_weights) for x in session.query(tables.Customer.customer_id)]))
 
-    now = datetime.datetime.utcnow()
-    headers = [tables.Order_Header(order_number=data_methods.number(), sold_to_id=random.choice(customers),
-                                   po_id=fake_data.ean8(), currency='USD',
-                                   created_date=now,
-                                   last_updated_date=now) for i in range(0, number)]
+    headers = [tables.OrderHeader(order_number=data_methods.number(), sold_to_id=random.choice(customers),
+                                  currency='USD',
+                                  ) for i in range(0, number)]
     session.bulk_save_objects(headers)
     session.commit()
     print('Order Headers are populated.')
@@ -184,34 +166,38 @@ def line():
     product_prices = tuple(itertools.chain.from_iterable([[[x.product_id, x.price_list_id, x.list_price]] * random.choice(weights) for x in session.query(tables.ProductPrice).filter(
         tables.ProductPrice.price_list_id == 3)]))
     shipping_type_ids = [x.shipping_type_id for x in session.query(
-        tables.Shipping_Type)]
-    header_ids = (x.header_id for x in session.query(tables.Order_Header))
+        tables.ShippingType)]
+    header_ids = (x.header_id for x in session.query(tables.OrderHeader))
     ship_dates = tuple(itertools.chain.from_iterable(
         [[data_methods.future_date()] * random.choice(weights) for i in range(0, 30)]))
-    now = datetime.datetime.utcnow()
-    quantity = range(0, 20)
+    quantity = range(1, 20)
     discount = range(10, 20)
 
     def create_line(header_id):
         product_price = random.choice(product_prices)
-        data = tables.Order_Line(header_id=header_id, shipping_type_id=random.choice(shipping_type_ids),
-                                 schedule_ship_date=random.choice(ship_dates),
-                                 quantity=random.choice(quantity),
-                                 product_id=product_price[0],
-                                 price_list_id=product_price[1],
-                                 discount=random.choice(discount),
-                                 created_date=now, last_updated_date=now)
+        data = tables.OrderLine(header_id=header_id, shipping_type_id=random.choice(shipping_type_ids),
+                                schedule_ship_date=random.choice(ship_dates),
+                                quantity=random.choice(quantity),
+                                product_id=product_price[0],
+                                price_list_id=product_price[1],
+                                discount=random.choice(discount),
+                                )
         data.net_price = (product_price[2] -
                           (product_price[2] / data.discount))
         return data
 
-    line_range = range(1, 8)
-    order_lines = [create_line(i)
-                   for i in header_ids for x in range(0, random.choice(line_range))]
+    line_range = [5]
+    # range(1, 8)
+    order_lines = (create_line(i)
+                   for i in header_ids for x in range(0, random.choice(line_range)))
+
+    # order_lines = [create_line(i)
+    # for i in header_ids for x in range(0, random.choice(line_range))]
     session.bulk_save_objects(order_lines)
     session.commit()
+
     print('{} order lines have been added to the database.'.format(
-        len(order_lines)))
+        session.query(tables.OrderLine.line_id).count()))
 
 
 script_start = time.time()
@@ -229,7 +215,7 @@ costs()
 price_list()
 prices()
 shipping()
-header(500000)
+header(1000)
 line()
 
 

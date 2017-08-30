@@ -6,28 +6,23 @@ import mysql_connection as mysql
 
 Base = declarative_base()
 metadata = MetaData()
-Session = sessionmaker(bind=mysql.engine)
-session = Session()
+session = sessionmaker(bind=mysql.transactions)()
 
 
 class Country(Base):
     __tablename__ = 'countries'
     country_id = Column(Integer, primary_key=True)
     country_name = Column(String(500))
-    created_date = Column(DateTime)
-    last_updated_date = Column(DateTime)
     states_provs = relationship(
-        "State_Prov", backref="country", lazy='dynamic')
+        "StateProv", backref="country", lazy='dynamic')
     customer = relationship("Customer", backref="country", lazy="dynamic")
 
 
-class State_Prov(Base):
+class StateProv(Base):
     __tablename__ = 'states_provs'
     state_prov_id = Column(Integer, primary_key=True)
     state_name = Column(String(500))
     country_id = Column(Integer, ForeignKey(Country.country_id))
-    created_date = Column(DateTime)
-    last_updated_date = Column(DateTime)
     customer = relationship("Customer", backref="states_provs", lazy="dynamic")
 
 
@@ -37,27 +32,22 @@ class Customer(Base):
     customer_name = Column(String(500))
     address = Column(String(100))
     city = Column(String(100))
-    state_prov_id = Column(Integer, ForeignKey(State_Prov.state_prov_id))
+    state_prov_id = Column(Integer, ForeignKey(StateProv.state_prov_id))
     country_id = Column(Integer, ForeignKey(Country.country_id))
     postal_code = Column(String(20))
-    ship_to = Column(Integer)
-    sold_to = Column(Integer)
-    created_date = Column(DateTime)
-    last_updated_date = Column(DateTime)
 
 
-class Product_Family(Base):
+class ProductFamily(Base):
     __tablename__ = 'product_family'
     family_id = Column(Integer, primary_key=True)
     product_family_name = Column(String(5000))
 
 
-class Product_Subfamily(Base):
+class ProductSubfamily(Base):
     __tablename__ = 'product_subfamily'
     subfamily_id = Column(Integer, primary_key=True)
     product_subfamily_name = Column(String(500))
-    family_id = Column(Integer, ForeignKey(Product_Family.family_id))
-    family = relationship(Product_Family)
+    family_id = Column(Integer, ForeignKey(ProductFamily.family_id))
 
 
 class Product(Base):
@@ -68,16 +58,14 @@ class Product(Base):
     description = Column(String(2000))
     uom = Column(String(20))
     manufacturer_id = Column(Integer)
-    family_id = Column(Integer, ForeignKey(Product_Subfamily.family_id))
-    subfamily_id = Column(Integer, ForeignKey(Product_Subfamily.subfamily_id))
-    subfamily = relationship(Product_Subfamily, foreign_keys=[subfamily_id])
-    family = relationship(Product_Subfamily, foreign_keys=family_id)
+    family_id = Column(Integer, ForeignKey(ProductSubfamily.family_id))
+    subfamily_id = Column(Integer, ForeignKey(ProductSubfamily.subfamily_id))
 
 
 class ProductCost(Base):
     __tablename__ = 'product_costs'
     cost_id = Column(Integer, primary_key=True)
-    product_id = Column(Integer)
+    product_id = Column(Integer, ForeignKey(Product.product_id))
     mtl_cost = Column(Numeric(precision=4, scale=2))
     labor_cost = Column(Numeric(precision=4, scale=2))
     burden_cost = Column(Numeric(precision=4, scale=2))
@@ -99,35 +87,27 @@ class ProductPrice(Base):
     list_price = Column(Numeric(precision=4, scale=2))
 
 
-class Shipping_Type(Base):
+class ShippingType(Base):
     __tablename__ = 'shipping_types'
     shipping_type_id = Column(Integer, primary_key=True)
     description = Column(String(100))
     cost = Column(Integer)
-    created_date = Column(DateTime)
-    last_updated_date = Column(DateTime)
 
 
-class Order_Header(Base):
+class OrderHeader(Base):
     __tablename__ = 'order_headers'
     header_id = Column(Integer, primary_key=True)
     order_number = Column(String(20))
-    sold_to_id = Column(String(20))
-    # ship_to_id = Column(String(20))
-    po_id = Column(String(20))
+    sold_to_id = Column(Integer, ForeignKey(Customer.customer_id))
     currency = Column(String(5))
-    created_date = Column(DateTime)
-    last_updated_date = Column(DateTime)
-    # soldid = relationship(Customers.Customer(),
-    # foreign_keys=Customers.Customer.customer_id)
 
 
-class Order_Line(Base):
+class OrderLine(Base):
     __tablename__ = 'order_lines'
     line_id = Column(Integer, primary_key=True)
-    header_id = Column(Integer, ForeignKey(Order_Header.header_id))
+    header_id = Column(Integer, ForeignKey(OrderHeader.header_id))
     shipping_type_id = Column(Integer, ForeignKey(
-        Shipping_Type.shipping_type_id))
+        ShippingType.shipping_type_id))
     line_number = Column(Integer)
     schedule_ship_date = Column(DateTime)
     quantity = Column(Integer)
@@ -135,23 +115,16 @@ class Order_Line(Base):
     price_list_id = Column(Integer)
     discount = Column(Float)
     net_price = Column(Float)
-    created_date = Column(DateTime)
-    last_updated_date = Column(DateTime)
-    order_header = relationship(Order_Header)
-    headerid = relationship(Order_Header, foreign_keys=header_id)
-    shipping_types = relationship(Shipping_Type)
-    shipping_typeid = relationship(
-        Shipping_Type, foreign_keys=shipping_type_id)
 
 
 # Drop and create tables
 def drop_all():
-    Base.metadata.drop_all(mysql.engine)
+    Base.metadata.drop_all(mysql.transactions)
     print('All tables have been dropped.')
 
 
 def add_all():
-    Base.metadata.create_all(mysql.engine)
+    Base.metadata.create_all(mysql.transactions)
     print('All tables have been created.')
 
 # Define views
@@ -173,7 +146,7 @@ view_defs = ("""create or replace view current_product_prices as
 				 on pc.cost_id = most_recent.cost_id""",
              """create or replace view order_details as
                select ol.line_id, ol.schedule_ship_date, ol.quantity,
-               ol.discount, ol.product_id, ol.net_price, oh.order_number, oh.po_id,
+               ol.discount, ol.product_id, ol.net_price, oh.order_number,
                c.customer_name, c.city, sp.state_name, ct.country_name, p.product_number,
                p.product_name, p.description, p.uom, ps.product_subfamily_name, pf.product_family_name
                from order_lines ol inner join  order_headers oh
