@@ -9,49 +9,59 @@ import data_methods
 
 
 session = sessionmaker(bind=mysql.transactions)()
+city_session = sessionmaker(bind=mysql.cities)()
 fake_data = Faker()
 
 
-def countries():
-    countries = ['USA']
-    session.bulk_save_objects(
-        [tables.Country(country_name=c) for c in countries])
-    print('Countries are populated.')
+# def countries():
+#     countries = ['USA']
+#     session.bulk_save_objects(
+#         [tables.Country(country_name=c) for c in countries])
+#     print('Countries are populated.')
 
 
-def states_provs():
-    country = session.query(tables.Country).first()
-    states = (
-        'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado',
-        'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho',
-        'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana',
-        'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota',
-        'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada',
-        'New Hampshire', 'New Jersey', 'New Mexico', 'New York',
-        'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon',
-        'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota',
-        'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington',
-        'West Virginia', 'Wisconsin', 'Wyoming',
-    )
-    for s in states:
-        data = (tables.StateProv(state_name=s,
-                                 country=country))
-        session.add(data)
-    session.commit()
-    print('States and Provs are populated.')
+# def states_provs():
+#     country = session.query(tables.Country).first()
+#     states = (
+#         'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado',
+#         'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho',
+#         'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana',
+#         'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota',
+#         'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada',
+#         'New Hampshire', 'New Jersey', 'New Mexico', 'New York',
+#         'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon',
+#         'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota',
+#         'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington',
+#         'West Virginia', 'Wisconsin', 'Wyoming',
+#     )
+#     for s in states:
+#         data = (tables.StateProv(state_name=s,
+#                                  country=country))
+#         session.add(data)
+#     session.commit()
+#     print('States and Provs are populated.')
 
 
 def customers(number):
-    countries = [x.country_id for x in session.query(tables.Country)]
-    state_prov = [x.state_prov_id for x in session.query(tables.StateProv)]
-    for i in range(0, number):
-        data = tables.Customer(customer_name=fake_data.company(), address=fake_data.street_address(), city=fake_data.city(),
-                               state_prov_id=random.choice(state_prov), country_id=random.choice(countries),
-                               postal_code=fake_data.postalcode()
+    # countries = [x.country_id for x in session.query(tables.Country)]
+    # state_prov = [x.state_prov_id for x in session.query(tables.StateProv)]
+    cities = city_session.execute(
+        'select city,state_code,zip,latitude,longitude,country from cities order by rand() limit {}'.format(number))
+    # for i in range(0, number):
+    for x in cities:
+        data = tables.Customer(customer_name=fake_data.company(),
+                               address=fake_data.street_address(),
+                               city=x[0],
+                               state=x[1],
+                               postal_code=x[2],
+                               latitude=x[3],
+                               longitude=x[4],
+                               country=x[5]
                                )
         session.add(data)
     session.commit()
     print('Customers are populated.')
+    city_session.close()
 
 
 def families():
@@ -205,8 +215,8 @@ tables.drop_all()
 tables.add_all()
 tables.add_views()
 
-countries()
-states_provs()
+# countries()
+# states_provs()
 customers(100)
 families()
 subfamilies()
@@ -215,7 +225,7 @@ costs()
 price_list()
 prices()
 shipping()
-header(1000)
+header(500000)
 line()
 
 

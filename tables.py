@@ -1,5 +1,5 @@
 from sqlalchemy import Column, String, Integer, ForeignKey, Numeric, Boolean, Date, DateTime, MetaData, Float
-from sqlalchemy.orm import relationship
+# from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import mysql_connection as mysql
@@ -9,21 +9,22 @@ metadata = MetaData()
 session = sessionmaker(bind=mysql.transactions)()
 
 
-class Country(Base):
-    __tablename__ = 'countries'
-    country_id = Column(Integer, primary_key=True)
-    country_name = Column(String(500))
-    states_provs = relationship(
-        "StateProv", backref="country", lazy='dynamic')
-    customer = relationship("Customer", backref="country", lazy="dynamic")
+# class Country(Base):
+#     __tablename__ = 'countries'
+#     country_id = Column(Integer, primary_key=True)
+#     country_name = Column(String(500))
+#     states_provs = relationship(
+#         "StateProv", backref="country", lazy='dynamic')
+#     customer = relationship("Customer", backref="country", lazy="dynamic")
 
 
-class StateProv(Base):
-    __tablename__ = 'states_provs'
-    state_prov_id = Column(Integer, primary_key=True)
-    state_name = Column(String(500))
-    country_id = Column(Integer, ForeignKey(Country.country_id))
-    customer = relationship("Customer", backref="states_provs", lazy="dynamic")
+# class StateProv(Base):
+#     __tablename__ = 'states_provs'
+#     state_prov_id = Column(Integer, primary_key=True)
+#     state_name = Column(String(500))
+#     country_id = Column(Integer, ForeignKey(Country.country_id))
+# customer = relationship("Customer", backref="states_provs",
+# lazy="dynamic")
 
 
 class Customer(Base):
@@ -32,8 +33,12 @@ class Customer(Base):
     customer_name = Column(String(500))
     address = Column(String(100))
     city = Column(String(100))
-    state_prov_id = Column(Integer, ForeignKey(StateProv.state_prov_id))
-    country_id = Column(Integer, ForeignKey(Country.country_id))
+    state = Column(String(4))
+    country = Column(String(100))
+    latitude = Column(Numeric(precision=9, scale=6))
+    longitude = Column(Numeric(precision=11, scale=6))
+    # state_prov_id = Column(Integer, ForeignKey(StateProv.state_prov_id))
+    # country_id = Column(Integer, ForeignKey(Country.country_id))
     postal_code = Column(String(20))
 
 
@@ -147,16 +152,12 @@ view_defs = ("""create or replace view current_product_prices as
              """create or replace view order_details as
                select ol.line_id, ol.schedule_ship_date, ol.quantity,
                ol.discount, ol.product_id, ol.net_price, oh.order_number,
-               c.customer_name, c.city, sp.state_name, ct.country_name, p.product_number,
+               c.customer_name, c.city, c.state, c.country, p.product_number,
                p.product_name, p.description, p.uom, ps.product_subfamily_name, pf.product_family_name
                from order_lines ol inner join  order_headers oh
                on ol.header_id = oh.header_id
                inner join customers c
                on oh.sold_to_id = c.customer_id
-               inner join countries ct
-               on c.country_id = ct.country_id
-               inner join states_provs sp 
-               on c.state_prov_id = sp.state_prov_id
                inner join products p on ol.product_id = p.product_id
                inner join product_subfamily ps on p.subfamily_id = ps.subfamily_id
                inner join product_family pf on p.family_id = pf.family_id"""
