@@ -13,41 +13,9 @@ city_session = sessionmaker(bind=mysql.cities)()
 fake_data = Faker()
 
 
-# def countries():
-#     countries = ['USA']
-#     session.bulk_save_objects(
-#         [tables.Country(country_name=c) for c in countries])
-#     print('Countries are populated.')
-
-
-# def states_provs():
-#     country = session.query(tables.Country).first()
-#     states = (
-#         'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado',
-#         'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho',
-#         'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana',
-#         'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota',
-#         'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada',
-#         'New Hampshire', 'New Jersey', 'New Mexico', 'New York',
-#         'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon',
-#         'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota',
-#         'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington',
-#         'West Virginia', 'Wisconsin', 'Wyoming',
-#     )
-#     for s in states:
-#         data = (tables.StateProv(state_name=s,
-#                                  country=country))
-#         session.add(data)
-#     session.commit()
-#     print('States and Provs are populated.')
-
-
 def customers(number):
-    # countries = [x.country_id for x in session.query(tables.Country)]
-    # state_prov = [x.state_prov_id for x in session.query(tables.StateProv)]
     cities = city_session.execute(
         'select city,state_code,zip,latitude,longitude,country from cities order by rand() limit {}'.format(number))
-    # for i in range(0, number):
     for x in cities:
         data = tables.Customer(customer_name=fake_data.company(),
                                address=fake_data.street_address(),
@@ -163,9 +131,9 @@ def header(number):
     customers = list(itertools.chain.from_iterable(
         [[x[0]] * random.choice(customer_weights) for x in session.query(tables.Customer.customer_id)]))
 
-    headers = [tables.OrderHeader(order_number=data_methods.number(), sold_to_id=random.choice(customers),
+    headers = (tables.OrderHeader(order_number=data_methods.number(), sold_to_id=random.choice(customers),
                                   currency='USD',
-                                  ) for i in range(0, number)]
+                                  ) for i in range(0, number))
     session.bulk_save_objects(headers)
     session.commit()
     print('Order Headers are populated.')
@@ -196,13 +164,13 @@ def line():
                           (product_price[2] / data.discount))
         return data
 
-    line_range = [5]
-    # range(1, 8)
-    order_lines = (create_line(i)
-                   for i in header_ids for x in range(0, random.choice(line_range)))
+    line_range = range(0, 5)  # range(1, 8)
+    # order_lines = (create_line(i)
+    # for i in header_ids for x in range(0, random.choice(line_range)))
 
-    # order_lines = [create_line(i)
-    # for i in header_ids for x in range(0, random.choice(line_range))]
+    order_lines = map(
+        create_line, (i for i in header_ids for x in line_range))
+
     session.bulk_save_objects(order_lines)
     session.commit()
 
@@ -215,8 +183,6 @@ tables.drop_all()
 tables.add_all()
 tables.add_views()
 
-# countries()
-# states_provs()
 customers(100)
 families()
 subfamilies()
@@ -225,7 +191,7 @@ costs()
 price_list()
 prices()
 shipping()
-header(500000)
+header(10000)
 line()
 
 
