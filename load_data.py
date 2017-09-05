@@ -13,6 +13,9 @@ city_session = sessionmaker(bind=mysql.cities)()
 fake_data = Faker()
 
 
+engine = mysql.transactions
+
+
 def customers(number):
     cities = city_session.execute(
         'select city,state_code,zip,latitude,longitude,country from cities order by rand() limit {}'.format(number))
@@ -150,28 +153,31 @@ def line():
         [[data_methods.future_date()] * random.choice(weights) for i in range(0, 30)]))
     quantity = range(1, 20)
     discount = range(10, 20)
-
-    def create_line(header_id):
-        product_price = random.choice(product_prices)
-        data = tables.OrderLine(header_id=header_id, shipping_type_id=random.choice(shipping_type_ids),
-                                schedule_ship_date=random.choice(ship_dates),
-                                quantity=random.choice(quantity),
-                                product_id=product_price[0],
-                                price_list_id=product_price[1],
-                                discount=random.choice(discount),
-                                )
-        data.net_price = (product_price[2] -
-                          (product_price[2] / data.discount))
-        return data
-
     line_range = range(0, 5)  # range(1, 8)
-    # order_lines = (create_line(i)
-    # for i in header_ids for x in range(0, random.choice(line_range)))
 
-    order_lines = map(
-        create_line, (i for i in header_ids for x in line_range))
+    def line_dict(header_id):
+        product_price = random.choice(product_prices)
+        line_discount = random.choice(discount)
+        net_price = product_price[2] - (product_price[2] / line_discount)
+        return dict(header_id=header_id, shipping_type_id=random.choice(shipping_type_ids),
+                    schedule_ship_date=random.choice(ship_dates),
+                    quantity=random.choice(quantity),
+                    product_id=product_price[0],
+                    price_list_id=product_price[1],
+                    discount=line_discount,
+                    net_price=net_price
+                    )
 
-    session.bulk_save_objects(order_lines)
+    start = time.time()
+
+    engine.execute(
+        tables.OrderLine.__table__.insert(),
+        [line_dict(i) for i in header_ids for x in line_range]
+
+    )
+
+    end = time.time()
+    print('The write operation of the function took {}'.format(end - start))
     session.commit()
 
     print('{} order lines have been added to the database.'.format(
