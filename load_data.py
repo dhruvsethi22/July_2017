@@ -3,6 +3,7 @@ from faker import Faker
 import random
 import itertools
 import time
+import datetime
 import mysql_connection as mysql
 import tables
 import data_methods
@@ -13,7 +14,17 @@ city_session = sessionmaker(bind=mysql.cities)()
 fake_data = Faker()
 
 
+# optimization stuffs
 engine = mysql.transactions
+import pymysql.cursors
+
+# Connect to the database
+connection = pymysql.connect(host='localhost',
+                             user='michaelkunc',
+                             password='welcome123',
+                             db='transactions',
+                             charset='utf8mb4',
+                             cursorclass=pymysql.cursors.DictCursor)
 
 
 def customers(number):
@@ -134,52 +145,61 @@ def header(number):
     customers = list(itertools.chain.from_iterable(
         [[x[0]] * random.choice(customer_weights) for x in session.query(tables.Customer.customer_id)]))
 
-    headers = (tables.OrderHeader(order_number=data_methods.number(), sold_to_id=random.choice(customers),
-                                  currency='USD',
-                                  ) for i in range(0, number))
-    session.bulk_save_objects(headers)
+    def header_dict(id):
+        return {'header_id': id, 'order_number': data_methods.number(),
+                'sold_to_id': random.choice(customers), 'currency': 'USD'}
+
+    headers = (header_dict(i) for i in range(1, number + 1))
+
+    engine.execute(
+        tables.OrderHeader.__table__.insert(), list(headers)
+    )
+
     session.commit()
     print('Order Headers are populated.')
 
 
-def line():
-    weights = (1, 2, 3, 4, 5)
-    product_prices = tuple(itertools.chain.from_iterable([[[x.product_id, x.price_list_id, x.list_price]] * random.choice(weights) for x in session.query(tables.ProductPrice).filter(
-        tables.ProductPrice.price_list_id == 3)]))
-    shipping_type_ids = [x.shipping_type_id for x in session.query(
-        tables.ShippingType)]
-    header_ids = (x.header_id for x in session.query(tables.OrderHeader))
-    ship_dates = tuple(itertools.chain.from_iterable(
-        [[data_methods.future_date()] * random.choice(weights) for i in range(0, 30)]))
-    quantity = range(1, 20)
-    discount = range(10, 20)
+def line(order_header_quantity):
+    weights = range(1, 5)
+    price_list_id = 3
+    product_prices = tuple(itertools.chain.from_iterable([[[x.product_id, x.list_price]] * random.choice(weights) for x in session.query(tables.ProductPrice.product_id, tables.ProductPrice.list_price).filter(
+        tables.ProductPrice.price_list_id == price_list_id)]))
+
+    shipping_type_ids = tuple(x.shipping_type_id for x in session.query(
+        tables.ShippingType.shipping_type_id))
+    header_ids = range(1, order_header_quantity + 1)
+    ship_date = tuple(((datetime.datetime.now(
+    ) - datetime.timedelta(random.choice(range(1, 365))) for i in range(0, 30))))
     line_range = range(0, 5)  # range(1, 8)
 
-    def line_dict(header_id):
+    def line_values(header_id):
         product_price = random.choice(product_prices)
-        line_discount = random.choice(discount)
-        net_price = product_price[2] - (product_price[2] / line_discount)
-        return dict(header_id=header_id, shipping_type_id=random.choice(shipping_type_ids),
-                    schedule_ship_date=random.choice(ship_dates),
-                    quantity=random.choice(quantity),
-                    product_id=product_price[0],
-                    price_list_id=product_price[1],
-                    discount=line_discount,
-                    net_price=net_price
-                    )
+        line_discount = random.randrange(10, 20)
+        net_price = product_price[1] - (product_price[1] / line_discount)
+        shipping_type_id = random.choice(shipping_type_ids)
+        date = random.choice(ship_date)
+        qty = random.randrange(1, 20)
+        return (header_id, shipping_type_id, date, qty, product_price[0],
+                price_list_id, line_discount, net_price)
 
     start = time.time()
 
-    engine.execute(
-        tables.OrderLine.__table__.insert(),
-        [line_dict(i) for i in header_ids for x in line_range]
+    values = (line_values(i) for i in header_ids for x in line_range)
 
-    )
+    q = """ insert into order_lines (
+            header_id,shipping_type_id,schedule_ship_date,quantity,product_id,
+            price_list_id, discount, net_price
+            )
+            values (%s, %s, %s, %s, %s, %s, %s, %s)
+        """
 
+    with connection.cursor() as cursor:
+        cursor.executemany(q, values)
+
+    connection.commit()
+    session.commit()
     end = time.time()
     print('The write operation of the function took {}'.format(end - start))
-    session.commit()
-
     print('{} order lines have been added to the database.'.format(
         session.query(tables.OrderLine.line_id).count()))
 
@@ -189,6 +209,8 @@ tables.drop_all()
 tables.add_all()
 tables.add_views()
 
+orders = 20000
+
 customers(100)
 families()
 subfamilies()
@@ -197,8 +219,8 @@ costs()
 price_list()
 prices()
 shipping()
-header(10000)
-line()
+header(orders)
+line(orders)
 
 
 session.close()
